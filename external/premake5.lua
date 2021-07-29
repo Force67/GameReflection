@@ -228,8 +228,8 @@ project("cppast")
         "type_safe/external/debug_assert"
     })
     defines({
-        "CPPAST_VERSION_MAJOR=0",
-        "CPPAST_VERSION_MINOR=0",
-        "CPPAST_CLANG_BINARY=\"C:\\Program Files\\LLVM\\bin\""
+        "CPPAST_VERSION_MAJOR=\"0\"",
+        "CPPAST_VERSION_MINOR=\"0\"",
+        "CPPAST_CLANG_BINARY=\"C:\\Program Files\\LLVM\\bin\\clang++.exe\""
     })
     include_llvm()
