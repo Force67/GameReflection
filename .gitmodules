@@ -1,0 +1,9 @@
+[submodule "external/fmt"]
+	path = external/fmt
+	url = https://github.com/fmtlib/fmt
+[submodule "external/googletest"]
+	path = external/googletest
+	url = https://github.com/google/googletest
+[submodule "external/cppast"]
+	path = external/cppast
+	url = https://github.com/foonathan/cppast
