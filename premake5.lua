@@ -3,6 +3,10 @@
 
 include("./build")
 
+-- this is a workaround on windows to ensure cppast chooses
+-- the right constructor for tinyprocess.
+characterset("MBCS")
+
 filter ("configurations:Debug")
     defines("FMX_DEBUG")
 

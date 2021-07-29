@@ -1,9 +1,9 @@
 -- Copyright (C) Force67 <github.com/Force67>.
 -- For licensing information see LICENSE at the root of this distribution.
 
-project("symsup")
+project("reflection")
     kind("ConsoleApp")
-    targetname("SymSup")
+    targetname("gamerefl")
     staticruntime("On")
     files({
         "**.cc",
@@ -13,3 +13,6 @@ project("symsup")
     pchsource("pch.cc")
     forceincludes("pch.h")
     include_llvm()
+    links({
+        "cppast",
+    })
