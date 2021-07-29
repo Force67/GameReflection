@@ -5,6 +5,11 @@ project("reflection")
     kind("ConsoleApp")
     targetname("gamerefl")
     staticruntime("On")
+    includedirs({
+        blu.extdir .. "/cppast/include",
+        blu.extdir .. "/type_safe/include",
+        blu.extdir .. "/type_safe/external/debug_assert"
+    })
     files({
         "**.cc",
         "**.h",

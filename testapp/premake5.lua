@@ -5,7 +5,7 @@ project("testapp")
     kind("SharedLib")
     files({
         "**.cc",
-        "**.hpp",
+        "**.h",
     })
     includedirs({
         ".",
