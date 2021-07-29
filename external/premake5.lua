@@ -209,6 +209,8 @@ function include_llvm()
     })
 end
 
+--project(cppast VERSION 0.0)
+
 project("cppast")
     kind("StaticLib")
     staticruntime("On")
@@ -221,6 +223,13 @@ project("cppast")
     })
     includedirs({
         "cppast/include",
-        "cppast/external/tpl"
+        "cppast/external/tpl",
+        "type_safe/include",
+        "type_safe/external/debug_assert"
+    })
+    defines({
+        "CPPAST_VERSION_MAJOR=0",
+        "CPPAST_VERSION_MINOR=0",
+        "CPPAST_CLANG_BINARY=\"C:\\Program Files\\LLVM\\bin\""
     })
     include_llvm()
