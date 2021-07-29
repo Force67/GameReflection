@@ -214,9 +214,13 @@ project("cppast")
     staticruntime("On")
     files({
         "cppast/src/**.cpp",
-        "**.h",
+        "cppast/include/**.h",
+        "cppast/external/tpl/process.cpp",
+        "cppast/external/tpl/process.hpp",
+        "cppast/external/tpl/process_win.cpp",
     })
     includedirs({
         "cppast/include",
+        "cppast/external/tpl"
     })
     include_llvm()
