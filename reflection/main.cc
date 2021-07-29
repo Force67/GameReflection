@@ -1,11 +1,8 @@
 
 #include <cstdio>
-#include <cppast/code_generator.hpp>          // for generate_code()
-#include <cppast/cpp_entity_kind.hpp>         // for the cpp_entity_kind definition
-#include <cppast/cpp_forward_declarable.hpp>  // for is_definition()
-#include <cppast/cpp_namespace.hpp>           // for cpp_namespace
-#include <cppast/libclang_parser.hpp>         // for libclang_parser, libclang_compile_config, cpp_entity,...
-#include <cppast/visitor.hpp>                 // for visit()
+
+#include "code_analyzer.h"
+#include "symbol_table.h"
 
 #include <iostream>
 
@@ -96,13 +93,31 @@ void print_entity(std::ostream& out, const cppast::cpp_entity& e) {
   }
 }
 
+std::string FormatClassMember(const cppast::cpp_member_function& func) {
+  assert(func.parent());
+  auto& parent = static_cast<const cppast::cpp_class&>(func.parent().value());
+  return parent.name() + "::" + func.name();
+}
+
+bool IsMemberFuncReflective(const cppast::cpp_member_function_base& func) {
+  return cppast::has_attribute(func, "refl::override") && 
+      !func.is_consteval() && !func.is_constexpr();
+}
+
+bool IsFreeFuncReflective(const cppast::cpp_function& func) {
+  return cppast::has_attribute(func, "refl::override") && !func.is_consteval() && !func.is_constexpr();
+}
+
 // prints the AST of a file
 void print_ast(std::ostream& out, const cppast::cpp_file& file) {
   // print file name
-  out << "AST for '" << file.name() << "':\n";
+  std::printf("AST for %s\n", file.name().c_str());
+
   std::string prefix;  // the current prefix string
   // recursively visit file and all children
   cppast::visit(file, [&](const cppast::cpp_entity& e, cppast::visitor_info info) {
+    const auto ee = e.kind();
+#if 1
     if (e.kind() == cppast::cpp_entity_kind::file_t || cppast::is_templated(e) || cppast::is_friended(e))
       // no need to do anything for a file,
       // templated and friended entities are just proxies, so skip those as well
@@ -119,56 +134,76 @@ void print_ast(std::ostream& out, const cppast::cpp_file& file) {
       if (info.last_child) {
         if (info.event == cppast::visitor_info::container_entity_enter)
           prefix += "  ";
-        out << "+-";
+        std::puts("+-");
       } else {
         if (info.event == cppast::visitor_info::container_entity_enter)
           prefix += "| ";
-        out << "|-";
+        std::puts("|-");
       }
 
       print_entity(out, e);
     }
+#endif
 
     return true;
   });
 }
 
-// parse a file
-std::unique_ptr<cppast::cpp_file> parse_file(const cppast::libclang_compile_config& config,
-                                             const cppast::diagnostic_logger& logger,
-                                             const std::string& filename,
-                                             bool fatal_error) {
-  // the entity index is used to resolve cross references in the AST
-  // we don't need that, so it will not be needed afterwards
+std::unique_ptr<cppast::cpp_file> TryConsumeFile(const cppast::libclang_compile_config& config,
+                                                 const cppast::diagnostic_logger& logger,
+                                                 const std::string& filename) {
   cppast::cpp_entity_index idx;
-  // the parser is used to parse the entity
-  // there can be multiple parser implementations
   cppast::libclang_parser parser(type_safe::ref(logger));
-  // parse the file
-  auto file = parser.parse(idx, filename, config);
-  if (fatal_error && parser.error())
+
+  // ensure that the parser gets a linux style path.
+  // else it freaks out!
+  std::string sanitzed_name = filename;
+  std::replace(sanitzed_name.begin(), sanitzed_name.end(), '\\', '/');
+
+  auto file = parser.parse(idx, sanitzed_name, config);
+  if (parser.error()) {
     return nullptr;
+  }
+
   return file;
 }
 
 int main(int argc, char** argv) {
-  // on windows we must supports msvc extensions.
   cppast::compile_flags flags;
+
+#if defined(OS_WIN)
   flags |= cppast::compile_flag::ms_extensions;
   flags |= cppast::compile_flag::ms_compatibility;
+#endif
 
   // minimum language standard will be cxx17
   cppast::libclang_compile_config config;
   config.set_flags(cppast::cpp_standard::cpp_17, flags);
 
   cppast::stderr_diagnostic_logger logger;
-  // debug only!
+
+#if defined(REFL_DEBUG)
   logger.set_verbose(true);
+#endif
+  constexpr char kTestfile[] = 
+      R"(C:/Users/vince/Documents/Development/Force/GameReflection/testapp/attribute_test.h)";
 
-  auto file = parse_file(config, logger, 
-      R"(C:\Users\vince\Documents\Development\Force\GameReflection\testapp\attribute_test.h)", true);
-  if (!file)
-    __debugbreak();
+  auto file_ast = TryConsumeFile(config, logger, kTestfile);
+  if (!file_ast) {
+    std::puts("Failed to consume file!");
+    return -1;
+  }
 
-   print_ast(std::cout, *file);
+  std::puts("printing ast!!");
+  print_ast(std::cout, *file_ast);
+  std::puts("printing ast end!");
+
+  refl::SymbolTable table(
+      "out_json.json", 
+      "out_header.h");
+  refl::CodeAnalyzer analyzer;
+  analyzer.Process(*file_ast, &table);
+
+  table.ExportHookHeader();
+  table.ExportJson();
 }

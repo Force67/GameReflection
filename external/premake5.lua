@@ -233,3 +233,18 @@ project("cppast")
         "CPPAST_CLANG_BINARY=\"C:\\Program Files\\LLVM\\bin\\clang++.exe\""
     })
     include_llvm()
+
+project("cppast_tool")
+    kind("ConsoleApp")
+    staticruntime("On")
+    files({
+        "cppast/tool/main.cpp",
+        "cppast/tool/cxxopts.hpp",
+    })
+    includedirs({
+        "cppast/tool/include",
+        blu.extdir .. "/cppast/include",
+        blu.extdir .. "/type_safe/include",
+        blu.extdir .. "/type_safe/external/debug_assert",
+    })
+    links("cppast")

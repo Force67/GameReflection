@@ -8,7 +8,7 @@ include("./build")
 characterset("MBCS")
 
 filter ("configurations:Debug")
-    defines("FMX_DEBUG")
+    defines("REFL_DEBUG")
 
 filter("configurations:Release")
     runtime("Release")
