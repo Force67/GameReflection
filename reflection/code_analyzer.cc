@@ -112,9 +112,10 @@ void CodeAnalyzer::IngestComments(const cppast::cpp_file& file) {
       return true;
     else if (!cppast::is_templated(entity) && !cppast::is_friended(entity)) {
       // make sure to read the documentation for this function in order to understand the required syntax!
-      auto ref = entity.comment();
-      if (ref) {
-        std::printf("A comment: %s\n", ref.value().c_str());
+
+      // this comment is tied to a cpp entity!
+      if (auto ref = entity.comment()) {
+        fmt::print("Entity tied comment: {}\n", ref.value());
       }
     }
 
@@ -123,7 +124,7 @@ void CodeAnalyzer::IngestComments(const cppast::cpp_file& file) {
 
   // add free comments
   for (auto& free : file.unmatched_comments()) {
-    std::printf("Found comment: %s\n", free.content.c_str());
+    fmt::print("Free Comment: {}\n", free.content);
   }
 }
 }  // namespace refl

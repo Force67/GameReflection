@@ -2,16 +2,6 @@
 // For licensing information see LICENSE at the root of this distribution.
 #pragma once
 
-#include <cppast/code_generator.hpp>
-#include <cppast/cpp_entity_kind.hpp>
-#include <cppast/cpp_forward_declarable.hpp>
-#include <cppast/cpp_namespace.hpp>
-#include <cppast/libclang_parser.hpp>
-#include <cppast/visitor.hpp>
-#include <cppast/cpp_function.hpp>
-#include <cppast/cpp_member_function.hpp>
-#include <cppast/cpp_class.hpp>
-
 namespace refl {
 class SymbolTable;
 

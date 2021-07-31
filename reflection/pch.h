@@ -13,8 +13,19 @@
 #include "clang/Rewrite/Core/Rewriter.h"
 #include "clang/Tooling/CommonOptionsParser.h"
 #include "clang/Tooling/Tooling.h"
-
 #include <clang-c/Index.h>
+
+#include <cppast/code_generator.hpp>
+#include <cppast/cpp_entity_kind.hpp>
+#include <cppast/cpp_forward_declarable.hpp>
+#include <cppast/cpp_namespace.hpp>
+#include <cppast/libclang_parser.hpp>
+#include <cppast/visitor.hpp>
+#include <cppast/cpp_function.hpp>
+#include <cppast/cpp_member_function.hpp>
+#include <cppast/cpp_class.hpp>
+
+#include <fmt/format.h>
 
 using namespace clang::tooling;
 //using namespace clang::ast_matchers;

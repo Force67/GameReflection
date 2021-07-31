@@ -6,9 +6,10 @@ project("reflection")
     targetname("gamerefl")
     staticruntime("On")
     includedirs({
+        blu.extdir .. "/fmt/include",
         blu.extdir .. "/cppast/include",
         blu.extdir .. "/type_safe/include",
-        blu.extdir .. "/type_safe/external/debug_assert"
+        blu.extdir .. "/type_safe/external/debug_assert",
     })
     files({
         "**.cc",
@@ -20,4 +21,5 @@ project("reflection")
     include_llvm()
     links({
         "cppast",
+        "fmtlib"
     })

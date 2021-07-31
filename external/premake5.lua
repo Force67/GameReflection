@@ -248,3 +248,16 @@ project("cppast_tool")
         blu.extdir .. "/type_safe/external/debug_assert",
     })
     links("cppast")
+
+project("fmtlib")
+    kind("StaticLib")
+    staticruntime("On")
+    files({
+        --"fmt/src/fmt.cc",
+        "fmt/src/format.cc",
+        "fmt/src/os.cc",
+        "fmt/include/fmt/*.h",
+    })
+    includedirs({
+        "fmt/include",
+    })

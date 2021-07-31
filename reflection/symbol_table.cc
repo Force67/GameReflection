@@ -24,6 +24,10 @@ void SymbolTable::AddSymbol(const std::string& name, const std::string* signatur
   storage_.emplace_back(std::move(name), signature ? std::move(*signature) : "");
 }
 
+void SymbolTable::AddPrivateFile(const std::string& name) {
+  files_.push_back(name);
+}
+
 void SymbolTable::ExportJson() {
   if (FILE* fptr = MakeFile(json_name_)) {
     fprintf(fptr, "{\"hooks\":[\n");

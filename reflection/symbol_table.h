@@ -11,6 +11,7 @@ class SymbolTable {
   SymbolTable(const std::string& json_name, const std::string& header_name);
 
   void AddSymbol(const std::string& name, const std::string* signature);
+  void AddPrivateFile(const std::string& name);
 
   void ExportJson();
   void ExportHookHeader();
@@ -26,5 +27,6 @@ class SymbolTable {
     std::string signature;
   };
   std::vector<Node> storage_;
+  std::vector<std::string> files_;
 };
 }
