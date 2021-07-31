@@ -10,9 +10,19 @@
 namespace refl {
 
 namespace {
-constexpr char kDefaultFuncMarker[] = "refl::override";
-constexpr char kDefaultVarMarker[] = "refl::override";
-constexpr char kHiddenComment[] = "//!NOPUBLIC";
+cl::opt<std::string> FunctionMarker("func-marker",
+                                      cl::desc("C++ attribute function marker"),
+                                      cl::value_desc("attribute-name"),
+                                      cl::init("refl::override"));
+cl::opt<std::string> VariableMarker("var-marker",
+                                      cl::desc("C++ attribute variable marker"),
+                                      cl::value_desc("attribute-name"),
+                                      cl::init("refl::override"));
+cl::opt<std::string> HideFileMarker("hide-file-marker",
+                                      cl::desc("C++ comment which will trigger the file to be added "
+                                      "to the exclusion list"),
+                                      cl::value_desc("marker-name"),
+                                      cl::init("//!NOPUBLIC"));
 
 // convert a member function to class::name
 std::string PrettyFormatClassMember(const cppast::cpp_member_function& func) {
@@ -29,32 +39,22 @@ bool IsGoodEntity(cppast::cpp_entity& entity) {
 }  // namespace
 
 CodeAnalyzer::CodeAnalyzer() {
-  LoadConfig();
-}
-
-void CodeAnalyzer::LoadConfig() {
-  if (func_marker_.empty())
-    func_marker_ = kDefaultFuncMarker;
-  if (var_marker_.empty())
-    var_marker_ = kDefaultVarMarker;
-  if (hidden_marker_.empty())
-    hidden_marker_ = kHiddenComment;
 }
 
 bool CodeAnalyzer::IsFreeFuncReflective(const cppast::cpp_function& func) {
-  return cppast::has_attribute(func, func_marker_) && !func.is_consteval() && !func.is_constexpr();
+  return cppast::has_attribute(func, FunctionMarker) && !func.is_consteval() && !func.is_constexpr();
 }
 
 bool CodeAnalyzer::IsMemberFuncReflective(const cppast::cpp_member_function_base& func) {
-  return cppast::has_attribute(func, func_marker_) && !func.is_consteval() && !func.is_constexpr();
+  return cppast::has_attribute(func, FunctionMarker) && !func.is_consteval() && !func.is_constexpr();
 }
 
 bool CodeAnalyzer::IsVariableReflective(const cppast::cpp_variable& var) {
-  return cppast::has_attribute(var, var_marker_) && !var.is_constexpr();
+  return cppast::has_attribute(var, VariableMarker) && !var.is_constexpr();
 }
 
 bool CodeAnalyzer::IsCommentCommand(const std::string& comment) {
-  size_t pos = comment.find(hidden_marker_);
+  size_t pos = comment.find(HideFileMarker);
   return pos != std::string::npos;
 }
 

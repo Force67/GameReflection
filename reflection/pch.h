@@ -15,6 +15,8 @@
 #include "clang/Tooling/Tooling.h"
 #include <clang-c/Index.h>
 
+#include <llvm/Support/CommandLine.h>
+
 #include <cppast/code_generator.hpp>
 #include <cppast/cpp_entity_kind.hpp>
 #include <cppast/cpp_forward_declarable.hpp>

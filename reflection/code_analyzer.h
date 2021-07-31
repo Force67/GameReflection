@@ -12,17 +12,11 @@ class CodeAnalyzer {
   void Process(const cppast::cpp_file&, SymbolTable*);
 
  private:
-  void LoadConfig();
   void IngestComments(const cppast::cpp_file&);
 
   bool IsMemberFuncReflective(const cppast::cpp_member_function_base&);
   bool IsFreeFuncReflective(const cppast::cpp_function&);
   bool IsVariableReflective(const cppast::cpp_variable&);
   bool IsCommentCommand(const std::string&);
-
- private:
-  std::string func_marker_;
-  std::string var_marker_;
-  std::string hidden_marker_;
 };
 }
