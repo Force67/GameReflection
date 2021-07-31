@@ -6,6 +6,8 @@
 #include <stddef.h>
 #endif
 
+//!MYCOMMENT
+
 namespace creation {
 
 [[refl::override]]
@@ -39,11 +41,11 @@ class BSSystemFile {
   BSSystemFile();
   BSSystemFile(BSSystemFile& aRhs);
   BSSystemFile(BSSystemFile&& aRhs);
-  // Opens the file directly.
+  //! Opens the file directly.
   explicit BSSystemFile(const char* name, AccessMode amode, OpenMode omode, bool async, uint32_t sizehint, bool unk8);
   ~BSSystemFile();
 
-  // Move opened file.
+  //! Move opened file.
   BSSystemFile& operator=(BSSystemFile& aRhs);
   BSSystemFile& operator=(BSSystemFile&& aRhs);
 
@@ -86,7 +88,7 @@ class BSSystemFile {
   }
 
  private:
-  // TODO: make implementation detail
+  //! TODO: make implementation detail
   static constexpr uint32_t kErrorCodeMask = 0x3FFFFFFF;
   static constexpr uint32_t kCacheMask = 0x80000000;
 

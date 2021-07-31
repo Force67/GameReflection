@@ -6,11 +6,6 @@
 
 #include <iostream>
 
-// print error message
-void print_error(const std::string& msg) {
-  std::cerr << msg << '\n';
-}
-
 // prints the AST entry of a cpp_entity (base class for all entities),
 // will only print a single line
 void print_entity(std::ostream& out, const cppast::cpp_entity& e) {
@@ -93,21 +88,6 @@ void print_entity(std::ostream& out, const cppast::cpp_entity& e) {
   }
 }
 
-std::string FormatClassMember(const cppast::cpp_member_function& func) {
-  assert(func.parent());
-  auto& parent = static_cast<const cppast::cpp_class&>(func.parent().value());
-  return parent.name() + "::" + func.name();
-}
-
-bool IsMemberFuncReflective(const cppast::cpp_member_function_base& func) {
-  return cppast::has_attribute(func, "refl::override") && 
-      !func.is_consteval() && !func.is_constexpr();
-}
-
-bool IsFreeFuncReflective(const cppast::cpp_function& func) {
-  return cppast::has_attribute(func, "refl::override") && !func.is_consteval() && !func.is_constexpr();
-}
-
 // prints the AST of a file
 void print_ast(std::ostream& out, const cppast::cpp_file& file) {
   // print file name
@@ -134,11 +114,11 @@ void print_ast(std::ostream& out, const cppast::cpp_file& file) {
       if (info.last_child) {
         if (info.event == cppast::visitor_info::container_entity_enter)
           prefix += "  ";
-        std::puts("+-");
+        std::printf("+-");
       } else {
         if (info.event == cppast::visitor_info::container_entity_enter)
           prefix += "| ";
-        std::puts("|-");
+        std::printf("|-");
       }
 
       print_entity(out, e);
@@ -146,6 +126,22 @@ void print_ast(std::ostream& out, const cppast::cpp_file& file) {
 #endif
 
     return true;
+  });
+}
+
+void print_astX(const cppast::cpp_file& file) {
+  std::string prefix;
+  // visit each entity in the file
+  cppast::visit(file, [&](const cppast::cpp_entity& e, cppast::visitor_info info) {
+    if (info.event == cppast::visitor_info::container_entity_exit)  // exiting an old container
+      prefix.pop_back();
+    else if (info.event == cppast::visitor_info::container_entity_enter)
+    // entering a new container
+    {
+      std::cout << prefix << "'" << e.name() << "' - " << cppast::to_string(e.kind()) << '\n';
+      prefix += "\t";
+    } else  // if (info.event == cppast::visitor_info::leaf_entity) // a non-container entity
+      std::cout << prefix << "'" << e.name() << "' - " << cppast::to_string(e.kind()) << '\n';
   });
 }
 
@@ -159,7 +155,6 @@ std::unique_ptr<cppast::cpp_file> TryConsumeFile(const cppast::libclang_compile_
   // else it freaks out!
   std::string sanitzed_name = filename;
   std::replace(sanitzed_name.begin(), sanitzed_name.end(), '\\', '/');
-
   auto file = parser.parse(idx, sanitzed_name, config);
   if (parser.error()) {
     return nullptr;
@@ -178,7 +173,9 @@ int main(int argc, char** argv) {
 
   // minimum language standard will be cxx17
   cppast::libclang_compile_config config;
-  config.set_flags(cppast::cpp_standard::cpp_17, flags);
+  config.set_flags(cppast::cpp_standard::cpp_latest, flags);
+  config.fast_preprocessing(true);
+  //config.write_preprocessed(true);
 
   cppast::stderr_diagnostic_logger logger;
 
@@ -194,9 +191,15 @@ int main(int argc, char** argv) {
     return -1;
   }
 
+#if 0
   std::puts("printing ast!!");
   print_ast(std::cout, *file_ast);
   std::puts("printing ast end!");
+#endif
+
+  #if 0
+  print_astX(*file_ast);
+  #endif
 
   refl::SymbolTable table(
       "out_json.json", 
