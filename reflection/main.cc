@@ -2,6 +2,8 @@
 #include "symbol_table.h"
 #include "parser.h"
 
+#include "sys_utils.h"
+
 // gamerefl -disable-opt
 static cl::opt<std::string> InputFilename(cl::Positional,
                                           cl::desc("<input source file>"),
@@ -25,6 +27,13 @@ int main(int argc, char** argv) {
     fmt::print("Failed to consume file {}", file->name());
     return -1;
   }
+
+  #if 0
+  auto results = refl::FindFiles(R"(C:\Users\vince\Documents\Development\Tilted\LibCreation\dev\src)");
+  for (auto& it : *results) {
+    fmt::print("FilePath: {}\n", it);
+  }
+  #endif
 
   parser.Traverse(*file);
 

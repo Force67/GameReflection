@@ -1,7 +1,7 @@
 
 #include "parser.h"
 #include "symbol_table.h"
-#include <cppast/cpp_variable.hpp>
+#include "thread_pool.h"
 
 namespace refl {
 
@@ -20,6 +20,10 @@ cl::opt<std::string> HideFileMarker("hide-file-marker",
                                              "to the exclusion list"),
                                     cl::value_desc("marker-name"),
                                     cl::init("//!NOPUBLIC"));
+cl::opt<uint32_t> ParseThreadCount("parse-thread-count",
+                                    cl::desc("How many threads to use while parsing"),
+                                    cl::value_desc("thread-count"),
+                                    cl::init(10u));
 
 // convert a member function to class::name
 std::string PrettyFormatClassMember(const cppast::cpp_member_function& func) {
@@ -63,7 +67,7 @@ Parser::Parser(SymbolTable* tab) : logger_{CreateLogger()}, sym_tab_(tab) {
 }
 
 std::unique_ptr<cppast::cpp_file> Parser::TryParseFile(const std::string& file_name) {
-  cppast::cpp_entity_index idx;
+  cppast::cpp_entity_index index;
   cppast::libclang_parser parser(type_safe::ref(*logger_));
 
   // logger_.log("Parsing file: {}", file_name);
@@ -71,12 +75,46 @@ std::unique_ptr<cppast::cpp_file> Parser::TryParseFile(const std::string& file_n
   // sanitize path so cppast accepts it.
   std::string sanitzed_name = file_name;
   std::replace(sanitzed_name.begin(), sanitzed_name.end(), '\\', '/');
-  auto file = parser.parse(idx, sanitzed_name, clang_config_);
+  auto file = parser.parse(index, sanitzed_name, clang_config_);
   if (parser.error()) {
     return nullptr;
   }
 
   return file;
+}
+
+// TODO: use LLVM containers.
+type_safe::optional<Parser::file_collection_t> Parser::TryParseMultiple(
+    const std::vector<std::string>& multiple_files) {
+  file_collection_t results;
+  // the parser:
+  cppast::cpp_entity_index index;
+  cppast::libclang_parser parser(type_safe::ref(*logger_));
+
+  // collect multiple files
+  std::mutex mutex;
+  bool errored_out = false;
+
+  // TODO: may replace file_entry so cppast eats it
+
+  // multi threaded parsing.
+  ThreadPool pool(ParseThreadCount);
+  for (auto& file_entry : multiple_files) {
+    standardese_tool::add_job(pool, [&, file_entry] {
+      auto parsed_file = parser.parse(index, file_entry, clang_config_);
+
+      std::lock_guard<std::mutex> lock(mutex);
+      if (parsed_file)
+        results.push_back(std::move(parsed_file));
+      else
+        errored_out = true;
+    });
+  }
+
+  if (errored_out)
+    return type_safe::nullopt;
+
+  return std::move(results);
 }
 
 void Parser::Traverse(cppast::cpp_file& file) {

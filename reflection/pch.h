@@ -26,6 +26,7 @@
 #include <cppast/cpp_function.hpp>
 #include <cppast/cpp_member_function.hpp>
 #include <cppast/cpp_class.hpp>
+#include <cppast/cpp_variable.hpp>
 
 #include <fmt/format.h>
 
