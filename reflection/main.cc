@@ -1,5 +1,4 @@
 
-#include "code_analyzer.h"
 #include "symbol_table.h"
 #include "parser.h"
 
@@ -20,15 +19,14 @@ int main(int argc, char** argv) {
 
   refl::SymbolTable table;
 
-  refl::Parser parser;
-  auto file_ast = parser.TryParseFile(InputFilename);
-  if (!file_ast) {
-    fmt::print("Failed to consume file {}", file_ast->name());
+  refl::Parser parser(&table);
+  auto file = parser.TryParseFile(InputFilename);
+  if (!file) {
+    fmt::print("Failed to consume file {}", file->name());
     return -1;
   }
 
-  refl::CodeAnalyzer analyzer;
-  analyzer.Process(*file_ast, &table);
+  parser.Traverse(*file);
 
   table.ExportHookHeader();
   table.ExportJson();
