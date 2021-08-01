@@ -1,42 +1,31 @@
 
-#include "symbol_table.h"
+#include "store.h"
 #include "parser.h"
-
-#include "sys_utils.h"
-
-// gamerefl -disable-opt
-static cl::opt<std::string> InputFilename(cl::Positional,
-                                          cl::desc("<input source file>"),
-                                          cl::init("-"),
-                                          cl::value_desc("filename"));
+#include "file_collection.h"
 
 int main(int argc, char** argv) {
-  cl::ParseCommandLineOptions(
-      argc, argv, "TiltedPhoques Content tool\n");
+  using namespace refl;
 
-  if (InputFilename.empty()) {
+  cl::ParseCommandLineOptions(argc, argv, "TiltedPhoques Content tool\n");
+  if (!FileCollection::HasPathDirective()) {
     cl::PrintHelpMessage();
     return 0;
   }
 
-  refl::SymbolTable table;
+  FileCollection collection;
+  collection.SearchFiles();
 
-  refl::Parser parser(&table);
-  auto file = parser.TryParseFile(InputFilename);
-  if (!file) {
-    fmt::print("Failed to consume file {}", file->name());
+  Parser parser;
+  if (!parser.TryParseFiles(collection)) {
+    fmt::print("Failed to parse files");
     return -1;
   }
 
-  #if 0
-  auto results = refl::FindFiles(R"(C:\Users\vince\Documents\Development\Tilted\LibCreation\dev\src)");
-  for (auto& it : *results) {
-    fmt::print("FilePath: {}\n", it);
+  { 
+    Store store;
+    parser.TraverseFiles(store);
+
+    store.ExportHookHeader();
+    store.ExportJson();
   }
-  #endif
-
-  parser.Traverse(*file);
-
-  table.ExportHookHeader();
-  table.ExportJson();
 }

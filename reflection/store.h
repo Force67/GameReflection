@@ -6,10 +6,10 @@
 
 namespace refl {
 
-class SymbolTable {
+class Store {
  public:
   void AddSymbol(const std::string& name, const std::string* signature);
-  void AddPrivateFile(const std::string& name);
+  void RemoveFile(const std::string& name);
 
   void ExportJson();
   void ExportHookHeader();

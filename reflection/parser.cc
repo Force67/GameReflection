@@ -1,12 +1,13 @@
 
 #include "parser.h"
-#include "symbol_table.h"
+#include "store.h"
 #include "thread_pool.h"
+#include "file_collection.h"
 
 namespace refl {
 
 namespace {
-// tweakable values from command line.
+// tweak able values from command line.
 cl::opt<std::string> FunctionMarker("func-marker",
                                     cl::desc("C++ attribute function marker"),
                                     cl::value_desc("attribute-name"),
@@ -21,9 +22,9 @@ cl::opt<std::string> HideFileMarker("hide-file-marker",
                                     cl::value_desc("marker-name"),
                                     cl::init("//!NOPUBLIC"));
 cl::opt<uint32_t> ParseThreadCount("parse-thread-count",
-                                    cl::desc("How many threads to use while parsing"),
-                                    cl::value_desc("thread-count"),
-                                    cl::init(10u));
+                                   cl::desc("How many threads to use while parsing"),
+                                   cl::value_desc("thread-count"),
+                                   cl::init(10u));
 
 // convert a member function to class::name
 std::string PrettyFormatClassMember(const cppast::cpp_member_function& func) {
@@ -49,107 +50,90 @@ bool IsReflective(const cppast::cpp_member_function_base& func) {
 bool IsReflective(const cppast::cpp_variable& var) {
   return cppast::has_attribute(var, VariableMarker) && !var.is_constexpr();
 }
+
+bool IsPrivateFile(const std::string& comment) {
+  return comment.find(HideFileMarker) != std::string::npos;
+}
 }  // namespace
 
-Parser::Parser(SymbolTable* tab) : logger_{CreateLogger()}, sym_tab_(tab) {
+Parser::Parser() : logger_{CreateLogger()} {
   cppast::compile_flags flags;
-
 #if defined(OS_WIN)
   flags |= cppast::compile_flag::ms_extensions;
   flags |= cppast::compile_flag::ms_compatibility;
 #endif
-
-  // minimum language standard will be cxx17
-  cppast::libclang_compile_config config;
-  config.set_flags(cppast::cpp_standard::cpp_latest, flags);
-  config.fast_preprocessing(true);
-  // config.write_preprocessed(true);
-}
-
-std::unique_ptr<cppast::cpp_file> Parser::TryParseFile(const std::string& file_name) {
-  cppast::cpp_entity_index index;
-  cppast::libclang_parser parser(type_safe::ref(*logger_));
-
-  // logger_.log("Parsing file: {}", file_name);
-
-  // sanitize path so cppast accepts it.
-  std::string sanitzed_name = file_name;
-  std::replace(sanitzed_name.begin(), sanitzed_name.end(), '\\', '/');
-  auto file = parser.parse(index, sanitzed_name, clang_config_);
-  if (parser.error()) {
-    return nullptr;
-  }
-
-  return file;
+  clang_config_.set_flags(cppast::cpp_standard::cpp_latest, flags);
+  clang_config_.fast_preprocessing(true);
 }
 
 // TODO: use LLVM containers.
-type_safe::optional<Parser::file_collection_t> Parser::TryParseMultiple(
-    const std::vector<std::string>& multiple_files) {
-  file_collection_t results;
-  // the parser:
+bool Parser::TryParseFiles(FileCollection& collection) {
+  auto& list = collection.GetList();
+
   cppast::cpp_entity_index index;
   cppast::libclang_parser parser(type_safe::ref(*logger_));
 
-  // collect multiple files
   std::mutex mutex;
-  bool errored_out = false;
-
-  // TODO: may replace file_entry so cppast eats it
+  bool result = true;
 
   // multi threaded parsing.
   ThreadPool pool(ParseThreadCount);
-  for (auto& file_entry : multiple_files) {
+  for (auto& file_entry : list) {
     standardese_tool::add_job(pool, [&, file_entry] {
       auto parsed_file = parser.parse(index, file_entry, clang_config_);
 
       std::lock_guard<std::mutex> lock(mutex);
       if (parsed_file)
-        results.push_back(std::move(parsed_file));
+        parsed_files_.push_back(std::move(parsed_file));
       else
-        errored_out = true;
+        result = false;
     });
   }
 
-  if (errored_out)
-    return type_safe::nullopt;
-
-  return std::move(results);
+  return result;
 }
 
-void Parser::Traverse(cppast::cpp_file& file) {
+void Parser::TraverseFiles(Store& store) {
+  ThreadPool pool(ParseThreadCount);
+  for (auto& it : parsed_files_) {
+    standardese_tool::add_job(pool, [&] { DoTraverse(store, *it); });
+  }
+}
+
+void Parser::DoTraverse(Store& store, cppast::cpp_file& file) {
+  std::mutex mutex;
   cppast::visit(file, [&](const cppast::cpp_entity& entity, const cppast::visitor_info& info) {
     if (info.event == cppast::visitor_info::container_entity_exit)
       // entity already handled
       return true;
     else if (!cppast::is_templated(entity) && !cppast::is_friended(entity)) {
-      // make sure to read the documentation for this function in order to understand the required syntax!
-      // this comment is tied to a cpp entity!
-      if (auto ref = entity.comment()) {
-        fmt::print("Entity tied comment: {}\n", ref.value());
-      }
-
       switch (entity.kind()) {
         case cppast::cpp_entity_kind::member_function_t: {
           auto& func = static_cast<const cppast::cpp_member_function&>(entity);
           if (IsReflective(func)) {
+            std::lock_guard<std::mutex> lock(mutex);
+
             std::string fullName = PrettyFormatClassMember(func);
             std::string sig = func.signature();
-            sym_tab_->AddSymbol(fullName, &sig);
+            store.AddSymbol(fullName, &sig);
           }
           break;
         }
         case cppast::cpp_entity_kind::function_t: {
           auto& func = static_cast<const cppast::cpp_function&>(entity);
           if (IsReflective(func)) {
-            sym_tab_->AddSymbol(func.name(), &func.signature());
+            std::lock_guard<std::mutex> lock(mutex);
+
+            store.AddSymbol(func.name(), &func.signature());
           }
           break;
         }
         case cppast::cpp_entity_kind::variable_t: {
           auto& var = static_cast<const cppast::cpp_variable&>(entity);
           if (IsReflective(var)) {
-            sym_tab_->AddSymbol(var.name(), nullptr);
+            std::lock_guard<std::mutex> lock(mutex);
+
+            store.AddSymbol(var.name(), nullptr);
           }
           break;
         }
@@ -161,9 +145,14 @@ void Parser::Traverse(cppast::cpp_file& file) {
     return true;
   });
 
-  // untied comments:
-  for (auto& free : file.unmatched_comments()) {
-    fmt::print("Free Comment: {}\n", free.content);
+  // the first comment of the file must contain the command.
+  auto comments = file.unmatched_comments();
+  if (comments.size().get() > 0) {
+    if (IsPrivateFile(comments.data()->content)) {
+      std::lock_guard<std::mutex> lock(mutex);
+
+      store.RemoveFile(file.name());
+    }
   }
 }
 }  // namespace refl
