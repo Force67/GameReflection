@@ -1,6 +1,6 @@
 
-#include "store.h"
 #include "parser.h"
+#include "rl_database.h"
 #include "file_collection.h"
 
 int main(int argc, char** argv) {
@@ -12,6 +12,7 @@ int main(int argc, char** argv) {
     return 0;
   }
 
+  // start assembling a collection of files.
   FileCollection collection;
   collection.SearchFiles();
 
@@ -22,10 +23,10 @@ int main(int argc, char** argv) {
   }
 
   { 
-    Store store;
-    parser.TraverseFiles(store);
+    RlDatabase database;
+    parser.TraverseFiles(database);
 
-    store.ExportHookHeader();
-    store.ExportJson();
+    database.WriteCxxHeader();
+    database.UpdateJsonReport();
   }
 }

@@ -5,12 +5,22 @@ class FileCollection {
  public:
   FileCollection();
 
-  void SearchFiles();
+  enum class Provider { 
+	  DirectorySeek,
+	  VisualStudio,
+	  CompileCommands,
+	  Premake,
+	  xmake
+  };
+
+  bool SearchFiles();
+  void RemoveFile(const std::string& file);
 
   auto& GetList() { return file_list_; }
 
   static bool HasPathDirective();
  private:
+  static Provider MapActiveProvider();
 
  private:
   std::vector<std::string> file_list_;

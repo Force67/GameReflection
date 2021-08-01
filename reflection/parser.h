@@ -3,7 +3,7 @@
 #include "logger.h"
 
 namespace refl {
-class Store;
+class RlDatabase;
 class FileCollection;
 
 class Parser {
@@ -13,10 +13,10 @@ class Parser {
   Parser();
   
   bool TryParseFiles(FileCollection&);
-  void TraverseFiles(Store&);
+  void TraverseFiles(RlDatabase&);
 
  private:
-  void DoTraverse(Store&, cppast::cpp_file&);
+  void DoTraverse(RlDatabase&, cppast::cpp_file&);
 
  private:
   file_collection_t parsed_files_;

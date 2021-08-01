@@ -1,6 +1,6 @@
 
 #include "parser.h"
-#include "store.h"
+#include "rl_database.h"
 #include "thread_pool.h"
 #include "file_collection.h"
 
@@ -93,14 +93,14 @@ bool Parser::TryParseFiles(FileCollection& collection) {
   return result;
 }
 
-void Parser::TraverseFiles(Store& store) {
+void Parser::TraverseFiles(RlDatabase& store) {
   ThreadPool pool(ParseThreadCount);
   for (auto& it : parsed_files_) {
     standardese_tool::add_job(pool, [&] { DoTraverse(store, *it); });
   }
 }
 
-void Parser::DoTraverse(Store& store, cppast::cpp_file& file) {
+void Parser::DoTraverse(RlDatabase& store, cppast::cpp_file& file) {
   std::mutex mutex;
   cppast::visit(file, [&](const cppast::cpp_entity& entity, const cppast::visitor_info& info) {
     if (info.event == cppast::visitor_info::container_entity_exit)
@@ -151,7 +151,7 @@ void Parser::DoTraverse(Store& store, cppast::cpp_file& file) {
     if (IsPrivateFile(comments.data()->content)) {
       std::lock_guard<std::mutex> lock(mutex);
 
-      store.RemoveFile(file.name());
+      store.ExcludeFile(file.name());
     }
   }
 }

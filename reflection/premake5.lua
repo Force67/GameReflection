@@ -12,8 +12,9 @@ project("reflection")
         blu.extdir .. "/type_safe/external/debug_assert",
     })
     files({
-        "**.cc",
-        "**.h",
+        "*.cc",
+        "*.h",
+        "*.inl"
     })
     pchheader("pch.h")
     pchsource("pch.cc")
