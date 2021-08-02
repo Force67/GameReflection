@@ -7,3 +7,4 @@ require('vstudio')
 
 include('artifacts.lua')
 include('buildenv.lua')
+include('file_export.lua')

@@ -2,6 +2,7 @@
 -- For licensing information see LICENSE at the root of this distribution.
 
 include("./build")
+require "./external/export-compile-commands"
 
 -- this is a workaround on windows to ensure cppast chooses
 -- the right constructor for tinyprocess.

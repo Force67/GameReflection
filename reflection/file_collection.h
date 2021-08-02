@@ -9,8 +9,6 @@ class FileCollection {
 	  DirectorySeek,
 	  VisualStudio,
 	  CompileCommands,
-	  Premake,
-	  xmake
   };
 
   bool SearchFiles();

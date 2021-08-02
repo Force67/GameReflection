@@ -10,11 +10,12 @@ project("reflection")
         blu.extdir .. "/cppast/include",
         blu.extdir .. "/type_safe/include",
         blu.extdir .. "/type_safe/external/debug_assert",
+        blu.extdir .. "/simdjson/singleheader",
     })
     files({
-        "*.cc",
-        "*.h",
-        "*.inl"
+        "**.cc",
+        "**.h",
+        "**.inl"
     })
     pchheader("pch.h")
     pchsource("pch.cc")

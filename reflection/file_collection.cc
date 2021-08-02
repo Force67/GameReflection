@@ -69,7 +69,11 @@ bool FileCollection::SearchFiles() {
       FindFilesByDirectory(InputPath, file_list_);
       break;
     default:
-    case Provider::CompileCommands:
+    case Provider::CompileCommands: {
+      //cppast::libclang_compilation_database database("");
+      //cppast::libclang_compile_config config(database, "");
+      break;
+    }
     case Provider::VisualStudio:
       return false;
   }
