@@ -4,7 +4,6 @@
 #include "parser.h"
 #include "rl_database.h"
 #include "thread_pool.h"
-#include "file_collection.h"
 
 namespace refl {
 
@@ -27,6 +26,13 @@ cl::opt<uint32_t> ParseThreadCount("parse-thread-count",
                                    cl::desc("How many threads to use while parsing"),
                                    cl::value_desc("thread-count"),
                                    cl::init(10u));
+
+std::unique_ptr<cppast::libclang_compilation_database> GetCommands(const std::string& InputPath) {
+  if (InputPath.empty())
+    return nullptr;
+
+  return std::make_unique<cppast::libclang_compilation_database>(InputPath);
+}
 
 // convert a member function to class::name
 std::string PrettyFormatClassMember(const cppast::cpp_member_function& func) {
@@ -59,30 +65,38 @@ bool IsPrivateFile(const std::string& comment) {
 }  // namespace
 
 Parser::Parser() : logger_{CreateLogger()} {
+  InitializeConfig(clang_config_);
+}
+
+void Parser::InitializeConfig(cppast::libclang_compile_config& config) {
   cppast::compile_flags flags;
 #if defined(OS_WIN)
   flags |= cppast::compile_flag::ms_extensions;
   flags |= cppast::compile_flag::ms_compatibility;
 #endif
-  clang_config_.set_flags(cppast::cpp_standard::cpp_latest, flags);
-  clang_config_.fast_preprocessing(true);
+  config.set_flags(cppast::cpp_standard::cpp_latest, flags);
+  config.fast_preprocessing(true);
 }
 
-// TODO: use LLVM containers.
-bool Parser::TryParseFiles(FileCollection& collection) {
-  auto& list = collection.GetList();
-
+bool Parser::TryParse(const std::vector<std::string>& file_list,
+                      type_safe::optional<cppast::libclang_compilation_database> db) {
+  // create the parser.
   cppast::cpp_entity_index index;
   cppast::libclang_parser parser(type_safe::ref(*logger_));
 
   std::mutex mutex;
   bool result = true;
 
-  // multi threaded parsing.
+  // batch jobs in parallel.
   ThreadPool pool(ParseThreadCount);
-  for (auto& file_entry : list) {
+  for (auto& file_entry : file_list) {
     standardese_tool::add_job(pool, [&, file_entry] {
-      auto parsed_file = parser.parse(index, file_entry, clang_config_);
+      // see if we can use compile commands to our advantage.
+      auto db_config = db.map(
+          [&](const cppast::libclang_compilation_database& db) { return cppast::find_config_for(db, file_entry); });
+
+      auto actual_config = db_config.value_or(clang_config_);
+      auto parsed_file = parser.parse(index, file_entry, actual_config);
 
       std::lock_guard<std::mutex> lock(mutex);
       if (parsed_file)

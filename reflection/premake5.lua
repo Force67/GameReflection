@@ -10,7 +10,8 @@ project("reflection")
         blu.extdir .. "/cppast/include",
         blu.extdir .. "/type_safe/include",
         blu.extdir .. "/type_safe/external/debug_assert",
-        blu.extdir .. "/simdjson/singleheader",
+        --blu.extdir .. "/simdjson/singleheader",
+        blu.extdir .. "/rapidjson/include"
     })
     files({
         "**.cc",

@@ -2,33 +2,72 @@
 // For licensing information see LICENSE at the root of this distribution.
 
 #include "parser.h"
-#include "rl_database.h"
-#include "file_collection.h"
+#include "config.h"
+#include "tweaks_db.h"
+#include "compile_database.h"
+
+#if 0
+static cl::list<std::string> InputFilenames(cl::Positional,
+                                            cl::desc("<input source files>"),
+                                            cl::OneOrMore);
+#endif
+
+// point this to where compile_commands.json is located.
+cl::opt<std::string> InputPath(cl::Positional,
+                               cl::desc("<input build path>"),
+                               cl::init("-"),
+                               cl::value_desc("path to where compile_commands.json is located"));
+
+cl::opt<std::string> TweaksDbName("tweaks-db-name",
+                                    cl::desc("Name of tweaks db"),
+                                    cl::value_desc("filename"),
+                                    cl::init("tweaks_db.json"));
+
+type_safe::optional<refl::ClangCompileDatabase> GetCompileCommands() {
+  if (InputPath.empty())
+    return type_safe::nullopt;
+
+  return refl::ClangCompileDatabase(InputPath, InputPath + "/compile_commands.json");
+}
+
+/*
+  cppast::libclang_compile_config new_config(compilation_db,
+      InputPath + "/compile_commands.json");
+*/
 
 int main(int argc, char** argv) {
   using namespace refl;
-
+  // init command line
   cl::ParseCommandLineOptions(argc, argv, "TiltedPhoques Content tool\n");
-  if (!FileCollection::HasPathDirective()) {
+  config::InitConfig();
+
+  // currently we need to require this..
+  if (InputPath.empty()) {
     cl::PrintHelpMessage();
     return 0;
   }
 
-  // start assembling a collection of files.
-  FileCollection collection;
-  collection.SearchFiles();
+  std::vector<std::string> file_list;
+  type_safe::optional<ClangCompileDatabase> commands;
+  // we have a commands db, that makes our life much easier.
+  if (commands = GetCompileCommands()) {
+    commands.value().CollectFiles(file_list);
+  }
 
+  // init parser.
   Parser parser;
-  if (!parser.TryParseFiles(collection)) {
+  if (!parser.TryParse(file_list, 
+      static_cast<type_safe::optional<cppast::libclang_compilation_database>>(commands))) {
     fmt::print("Failed to parse files");
     return -1;
   }
 
-  { 
-    RlDatabase database;
-    parser.TraverseFiles(database);
-
-    database.WriteCxxHeader();
-    database.UpdateJsonReport();
+  TweaksDatabase database;
+  if (!database.Open(TweaksDbName)) {
+    fmt::print("Unable to store tweak state - aborting");
+    return -1;
   }
+
+
+  return 0;
 }

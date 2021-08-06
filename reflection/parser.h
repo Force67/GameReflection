@@ -6,18 +6,21 @@
 
 namespace refl {
 class RlDatabase;
-class FileCollection;
+class ClangCompileDatabase;
 
 class Parser {
  public:
   using file_collection_t = std::vector<std::unique_ptr<cppast::cpp_file>>;
 
   Parser();
+
+  bool TryParse(const std::vector<std::string>& file_list,
+                type_safe::optional<cppast::libclang_compilation_database> db);
   
-  bool TryParseFiles(FileCollection&);
   void TraverseFiles(RlDatabase&);
 
  private:
+  void InitializeConfig(cppast::libclang_compile_config&);
   void DoTraverse(RlDatabase&, cppast::cpp_file&);
 
  private:
