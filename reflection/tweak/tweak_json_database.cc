@@ -1,7 +1,7 @@
 // Copyright (C) Force67 2021.
 // For licensing information see LICENSE at the root of this distribution.
 
-#include "tweak_store.h"
+#include "tweak_json_database.h"
 #include <llvm/Support/FileSystem.h>
 
 #include <fstream>
@@ -88,23 +88,27 @@ std::unique_ptr<rapidjson::Document> TweaksDatabase::Compose() {
   version.Set(1.0f);
 
   Value exclusion_list(kArrayType);
-  for (std::string& file : file_exclusions_) {
-    exclusion_list.PushBack(file, allocator);
+  for (const std::string& file : file_exclusions_) {
+    Value record(kStringType);
+    record.SetString(file.c_str(), allocator);
+
+    exclusion_list.PushBack(record.Move(), allocator);
   }
 
   Value override_list(kArrayType);
   for (FuncRecord& r : func_records_) {
     Value record(kObjectType);
-    record.AddMember("name", r.name, allocator);
-    record.AddMember("signature", r.signature, allocator);
-    record.AddMember("code-pattern", r.pattern, allocator);
+    record.AddMember("name", rapidjson::StringRef(r.name.c_str()), allocator);
+    record.AddMember("signature", rapidjson::StringRef(r.signature.c_str()), allocator);
+    record.AddMember("code-pattern", rapidjson::StringRef(r.pattern.c_str()), allocator);
 
-    override_list.PushBack(record, allocator);
+    override_list.PushBack(record.Move(), allocator);
   }
 
   root.AddMember("version", version, allocator);
   root.AddMember("file-exclusion-list", exclusion_list, allocator);
   root.AddMember("override-list", override_list, allocator);
+
 
   return doc;
 }

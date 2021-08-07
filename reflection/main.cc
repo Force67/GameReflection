@@ -3,8 +3,8 @@
 
 #include "parser.h"
 #include "config.h"
-#include "tweaks_db.h"
 #include "compile_database.h"
+#include "tweak/tilted_tweak_export.h"
 
 #if 0
 static cl::list<std::string> InputFilenames(cl::Positional,
@@ -54,20 +54,15 @@ int main(int argc, char** argv) {
     commands.value().CollectFiles(file_list);
   }
 
+  // rather hacky conversion..
   // init parser.
   Parser parser;
-  if (!parser.TryParse(file_list, 
-      static_cast<type_safe::optional<cppast::libclang_compilation_database>>(commands))) {
+  if (!parser.TryParse(file_list, &commands.value())) {
     fmt::print("Failed to parse files");
     return -1;
   }
 
-  TweaksDatabase database;
-  if (!database.Open(TweaksDbName)) {
-    fmt::print("Unable to store tweak state - aborting");
-    return -1;
-  }
-
-
+  // todo: domain switch check.
+  ExportTiltedPhoquesTweaks(parser);
   return 0;
 }

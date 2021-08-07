@@ -6,6 +6,7 @@ project("reflection")
     targetname("gamerefl")
     staticruntime("On")
     includedirs({
+        ".",
         blu.extdir .. "/fmt/include",
         blu.extdir .. "/cppast/include",
         blu.extdir .. "/type_safe/include",

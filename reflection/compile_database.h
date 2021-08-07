@@ -4,7 +4,7 @@
 
 namespace refl {
 
-class ClangCompileDatabase final : public cppast::libclang_compilation_database {
+class ClangCompileDatabase : public cppast::libclang_compilation_database {
  public:
   explicit ClangCompileDatabase(const std::string& build_dir, const std::string& commands_json);
 

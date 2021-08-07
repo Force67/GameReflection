@@ -33,9 +33,10 @@ struct FuncRecord {
   std::string signature;
 
   // TODO: llvm small string?
-  std::string pattern;
+  std::string pattern = "";
 };
 
+// todo: refactor it into a true database x)
 class TweaksDatabase {
  public:
   explicit TweaksDatabase(const std::string& file_path);
@@ -43,8 +44,11 @@ class TweaksDatabase {
 
   static std::unique_ptr<TweaksDatabase> 
       LoadFromFile(const std::string& path);
-
   bool StoreToFile();
+
+  inline void AddAttribRecord(const std::string& name, const std::string &sig);
+  inline void AddFileExclusion(const std::string&);
+
  private:
   bool Parse(const char* data);
   std::unique_ptr<rapidjson::Document> Compose();
@@ -57,3 +61,5 @@ class TweaksDatabase {
 
 TweaksDatabase* get_persistant_state();
 }  // namespace refl
+
+#include "tweak/tweak_json_database.inl"

@@ -3,29 +3,40 @@
 #pragma once
 
 #include "logger.h"
+#include "matchers/matcher_base.h"
 
 namespace refl {
-class RlDatabase;
 class ClangCompileDatabase;
 
 class Parser {
  public:
-  using file_collection_t = std::vector<std::unique_ptr<cppast::cpp_file>>;
-
   Parser();
 
-  bool TryParse(const std::vector<std::string>& file_list,
-                type_safe::optional<cppast::libclang_compilation_database> db);
+  bool TryParse(const std::vector<std::string>& file_list, 
+      cppast::libclang_compilation_database*);
   
-  void TraverseFiles(RlDatabase&);
+  void TraverseFiles();
+  void DebugLogStats();
 
+  void FindAllMatchersOfDomain(llvm::StringRef domain, std::vector<MatcherBase*>& out);
+  // extract domain specific
  private:
   void InitializeConfig(cppast::libclang_compile_config&);
-  void DoTraverse(RlDatabase&, cppast::cpp_file&);
+  void DoTraverse(cppast::cpp_file&);
 
  private:
+  using file_collection_t = std::vector<std::unique_ptr<cppast::cpp_file>>;
   file_collection_t parsed_files_;
+
   cppast::libclang_compile_config clang_config_;
   std::unique_ptr<Logger> logger_;
+
+  struct Stats {
+    std::atomic<uint32_t> entity_match_count = 0u;
+  };
+
+  Stats stats_{};
+
+  std::vector<std::unique_ptr<MatcherBase>> matcher_registry_;
 };
 }  // namespace refl
