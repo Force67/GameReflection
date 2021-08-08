@@ -32,24 +32,67 @@ static type_safe::optional<refl::ClangCompileDatabase> GetCompileCommands() {
   return refl::ClangCompileDatabase(InputPath, InputPath + "/compile_commands.json");
 }
 
+static std::string ConfigPath(char** argv) {
+  void* main_address = reinterpret_cast<void*>(&ConfigPath);
+  std::string path = llvm::sys::fs::getMainExecutable(argv[0], main_address);
+  llvm::SmallString<256> buf{sys::path::parent_path(path)};
+  llvm::sys::path::append(buf, "refl_config.cfg");
+  return std::string(buf.str());
+}
+
 static void InitOpts(int argc, char** argv) {
   llvm::SmallVector<const char*, 64> new_argv;
+  // exe path
+  new_argv.push_back(argv[0]);
+
+  // if the next entry is a positional argument
+  // add it. since there is only one positional
+  // argument, it's fine
+  // this is a bit hacky. :(
+  #if 0
+  if (argc > 1) {
+    llvm::StringRef arg0(argv[1]);
+    if (arg0[0] != '-' && arg0.find("--") != 
+        StringRef::npos) {
+      new_argv.push_back(argv[1]);
+    }
+  }
+  #endif
 
   // first look at config.
-  // LLVM handles absolute pathing for us.
   llvm::BumpPtrAllocator alloc;
   llvm::StringSaver storage(alloc);
-  cl::readConfigFile("config.cfg", storage, new_argv);
 
-  // add real cl args while config values take precedence.
-  for (int i = 0; i < argc; i++) {
-    auto it = std::find_if(new_argv.begin(), new_argv.end(), [&](const char* arg) {
-      return std::strcmp(arg, argv[i]) == 0;
-    });
+  if (cl::readConfigFile(ConfigPath(argv), storage, new_argv)) {
+    // add real cl args while config values take precedence.
+    for (int i = 1; i < argc; i++) {
+      auto it = std::find_if(new_argv.begin(), new_argv.end(), [&](const char* arg) {
+        const StringRef lhs(argv[i]);
+        const StringRef rhs(arg);
 
-    if (it == new_argv.end()) {
-      new_argv.push_back(argv[i]);
+        size_t equal_pos = lhs.find('=');
+        if (equal_pos == StringRef::npos) {
+          // non complex- direct compare
+          return lhs == rhs;
+        }
+
+        size_t equal_pos_rhs = rhs.find('=');
+        if (equal_pos == equal_pos_rhs) {
+          // compare the bits before the parameter
+          return lhs.substr(0, equal_pos) == rhs.substr(0, equal_pos_rhs);
+        }
+
+        return false;
+      });
+
+      // by excluding we override
+      if (it == new_argv.end()) {
+        new_argv.push_back(argv[i]);
+      }
     }
+  } else {
+    for (int i = 1; i < argc; ++i)
+      new_argv.push_back(argv[i]);
   }
 
   // fill in the rest from command line.
@@ -59,6 +102,11 @@ static void InitOpts(int argc, char** argv) {
 }
 
 int main(int argc, char** argv) {
+  if (argc < 3) {
+    cl::PrintHelpMessage();
+    return 0;
+  }
+
   using namespace refl;
   InitOpts(argc, argv);
 

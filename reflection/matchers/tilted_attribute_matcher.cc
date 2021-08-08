@@ -16,6 +16,10 @@ cl::opt<std::string> VariableMarker("tilted-variable-marker",
                                     cl::desc("C++ attribute variable marker"),
                                     cl::value_desc("attribute-name"),
                                     cl::init("refl::override"));
+cl::opt<std::string> ExperimentalMarker("tilted-class-marker",
+                                    cl::desc("C++ attribute class marker"),
+                                    cl::value_desc("attribute-name"),
+                                    cl::init("refl::override"));
 }  // namespace
 
 TiltedAttributeMatcher::TiltedAttributeMatcher()
@@ -27,16 +31,27 @@ TiltedAttributeMatcher::~TiltedAttributeMatcher() {
 
 bool TiltedAttributeMatcher::Match(const cppast::cpp_entity& entity, Phase ignored_phase) {
   switch (entity.kind()) {
+    case cppast::cpp_entity_kind::class_t: {
+      current_class_ = reinterpret_cast<const cppast::cpp_class*>(&entity);
+      break;
+    }
     case cppast::cpp_entity_kind::member_function_t: {
-      auto& func = static_cast<const cppast::cpp_member_function&>(entity);
+      auto& function = static_cast<const cppast::cpp_member_function&>(entity);
+      // we are marked as a child by the parent.
+      // watch this shit blow up.
+      if (&function.parent().value() == current_class_) {
+        __debugbreak();
+        return true;
+      }
+
       // attribute + not const eval + non constexpr
-      return cppast::has_attribute(func, FunctionMarker) &&
-             !func.is_consteval() && !func.is_constexpr();
+      return cppast::has_attribute(function, FunctionMarker) &&
+             !function.is_consteval() && !function.is_constexpr();
     }
     case cppast::cpp_entity_kind::function_t: {
-      auto& func = static_cast<const cppast::cpp_function&>(entity);
-      return cppast::has_attribute(func, FunctionMarker) &&
-             !func.is_consteval() && !func.is_constexpr();
+      auto& function = static_cast<const cppast::cpp_function&>(entity);
+      return cppast::has_attribute(function, FunctionMarker) &&
+             !function.is_consteval() && !function.is_constexpr();
     }
     case cppast::cpp_entity_kind::variable_t: {
       auto& var = static_cast<const cppast::cpp_variable&>(entity);

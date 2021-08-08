@@ -12,5 +12,9 @@ class TiltedAttributeMatcher final : public MatcherBase {
   ~TiltedAttributeMatcher();
 
   bool Match(const cppast::cpp_entity&, Phase) override;
+
+ private:
+  // this is so buggy with multithreading.. expect the worst
+  const cppast::cpp_entity* current_class_ = nullptr;
 };
-}  // namespace retk::match
+}  // namespace refl
