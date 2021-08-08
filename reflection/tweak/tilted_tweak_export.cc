@@ -14,7 +14,7 @@ std::string PrettyFormatClassMember(const cppast::cpp_member_function& func) {
   return parent.name() + "::" + func.name();
 }
 
-bool WriteTweaksCXXRegistry(MatcherBase::entity_collection_t& findings, const std::string& file_path) {
+bool WriteTweaksCXXRegistry(const MatcherBase::entity_collection_t& findings, const std::string& file_path) {
   std::string tweaks_data =
       "//Copyright (C) Force67 2021.\n"
       "This file is auto generated. Do not edit.";
@@ -37,14 +37,10 @@ void ExportTiltedPhoquesTweaks(Parser& parser) {
   std::vector<MatcherBase*> matches;
   parser.FindAllMatchersOfDomain("TiltedPhoques", matches);
 
-  // this is rather hacky
-
+  // TODO: yeet hacky array bound access.
   // view results of matchers.
-  MatcherBase::entity_collection_t attribute_findings;
-  matches[0]->View(attribute_findings);
-
-  MatcherBase::entity_collection_t comment_findings;
-  matches[1]->View(comment_findings);
+  auto& attribute_findings = matches[0]->GetMatchedResults();
+  auto& comment_findings = matches[1]->GetMatchedResults();
 
   WriteTweaksCXXRegistry(attribute_findings, "lol.cxx");
 

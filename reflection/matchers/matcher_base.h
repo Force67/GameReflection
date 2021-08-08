@@ -19,8 +19,8 @@ class MatcherBase {
   virtual bool Match(const cppast::cpp_entity&, Phase) = 0;
 
   using entity_collection_t = std::vector<const cppast::cpp_entity*>;
-  inline void View(entity_collection_t& out) { out = entity_refs_; }
-  
+  const entity_collection_t& GetMatchedResults() const { return entity_refs_; }
+
   llvm::StringRef GetDomainName() const { return domain_; }
   llvm::StringRef GetMatcherName() const { return matcher_name_; }
  private:

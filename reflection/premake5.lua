@@ -19,6 +19,9 @@ project("reflection")
         "**.h",
         "**.inl"
     })
+    filter("system:windows")
+        files("refl.rc")
+    filter{}
     pchheader("pch.h")
     pchsource("pch.cc")
     forceincludes("pch.h")
