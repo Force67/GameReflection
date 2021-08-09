@@ -4,7 +4,7 @@
 #include "parser.h"
 #include "config.h"
 #include "compile_database.h"
-#include "tweak/tilted_tweak_export.h"
+#include "tilted/tweak_export.h"
 
 #include <llvm/Support/StringSaver.h>
 

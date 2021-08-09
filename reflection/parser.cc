@@ -95,6 +95,7 @@ void Parser::DoTraverse(cppast::cpp_file& file) {
       return true;
     else if (!cppast::is_templated(entity) && !cppast::is_friended(entity)) {
       for (const auto& m : matcher_registry_) {
+        // TODO: allow thread local storage passed via param
         if (m->Match(entity, MatcherBase::Phase::kFirstPass)) {
           stats_.entity_match_count++;
 

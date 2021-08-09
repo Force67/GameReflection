@@ -2,7 +2,7 @@
 // For licensing information see LICENSE at the root of this distribution.
 
 #include "parser.h"
-#include "tweak/tweak_json_database.h"
+#include "tilted/json_tweak_database.h"
 
 namespace refl {
 
@@ -44,8 +44,8 @@ void ExportTiltedPhoquesTweaks(Parser& parser) {
 
   WriteTweaksCXXRegistry(attribute_findings, "lol.cxx");
 
-  if (std::unique_ptr<TweaksDatabase> database =
-          TweaksDatabase::LoadFromFile("lol.json")) {
+  if (std::unique_ptr<JsonTweakDatabase> database =
+          JsonTweakDatabase::LoadFromFile("lol.json")) {
     for (const cppast::cpp_entity* e : comment_findings) {
       auto* as_file = static_cast<const cppast::cpp_file*>(e);
       database->AddFileExclusion(as_file->name());

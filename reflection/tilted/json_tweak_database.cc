@@ -1,7 +1,6 @@
 // Copyright (C) Force67 2021.
 // For licensing information see LICENSE at the root of this distribution.
 
-#include "tweak_json_database.h"
 #include <llvm/Support/FileSystem.h>
 
 #include <fstream>
@@ -9,26 +8,20 @@
 #include <rapidjson/writer.h>
 #include <rapidjson/stringbuffer.h>
 
+#include "tilted/json_tweak_database.h".h"
+
 namespace refl {
 using namespace rapidjson;
 using namespace llvm::sys;
 
-TweaksDatabase* tweaks_db_instance = nullptr;
-
-TweaksDatabase* get_persistant_state() {
-  return tweaks_db_instance;
-}
-
-TweaksDatabase::TweaksDatabase(const std::string& file_path)
+JsonTweakDatabase::JsonTweakDatabase(const std::string& file_path)
     : file_path_(std::move(file_path)) {
-  tweaks_db_instance = this;
 }
 
-TweaksDatabase::~TweaksDatabase() {
-  tweaks_db_instance = nullptr;
+JsonTweakDatabase::~JsonTweakDatabase() {
 }
 
-std::unique_ptr<TweaksDatabase> TweaksDatabase::LoadFromFile(const std::string& file_path) {
+std::unique_ptr<JsonTweakDatabase> JsonTweakDatabase::LoadFromFile(const std::string& file_path) {
   // load into llvm slice.
   llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> buffer =
       llvm::MemoryBuffer::getFile(file_path);
@@ -39,7 +32,7 @@ std::unique_ptr<TweaksDatabase> TweaksDatabase::LoadFromFile(const std::string& 
     return nullptr;
   }
 
-  auto database = std::make_unique<TweaksDatabase>(file_path);
+  auto database = std::make_unique<JsonTweakDatabase>(file_path);
   if (!database->Parse(
           // TODO: validate if that works or if we have to:
           /*
@@ -51,7 +44,7 @@ std::unique_ptr<TweaksDatabase> TweaksDatabase::LoadFromFile(const std::string& 
   return database;
 }
 
-bool TweaksDatabase::StoreToFile() {
+bool JsonTweakDatabase::StoreToFile() {
   if (auto doc = Compose()) {
     rapidjson::StringBuffer string_buffer;
     string_buffer.Clear();
@@ -78,7 +71,7 @@ bool TweaksDatabase::StoreToFile() {
 
 // in fairness, this should return a managed buffer ptr..
 // instead of a doc
-std::unique_ptr<rapidjson::Document> TweaksDatabase::Compose() {
+std::unique_ptr<rapidjson::Document> JsonTweakDatabase::Compose() {
   auto doc = std::make_unique<Document>();
   auto& allocator = doc->GetAllocator();
 
@@ -96,7 +89,7 @@ std::unique_ptr<rapidjson::Document> TweaksDatabase::Compose() {
   }
 
   Value override_list(kArrayType);
-  for (FuncRecord& r : func_records_) {
+  for (AttributeRecord& r : attrib_records_) {
     Value record(kObjectType);
     record.AddMember("name", rapidjson::StringRef(r.name.c_str()), allocator);
     record.AddMember("signature", rapidjson::StringRef(r.signature.c_str()), allocator);
@@ -113,7 +106,7 @@ std::unique_ptr<rapidjson::Document> TweaksDatabase::Compose() {
   return doc;
 }
 
-bool TweaksDatabase::Parse(const char* data) {
+bool JsonTweakDatabase::Parse(const char* data) {
   // gulp all of the file in one go
   rapidjson::Document doc;
   doc.Parse(data);
@@ -131,9 +124,9 @@ bool TweaksDatabase::Parse(const char* data) {
 
   // TODO: store type info.
   auto& override_list = doc["override-list"].GetArray();
-  func_records_.resize(override_list.Size());
+  attrib_records_.resize(override_list.Size());
   for (rapidjson::Value& v : override_list) {
-    auto& entry = func_records_.emplace_back();
+    auto& entry = attrib_records_.emplace_back();
     entry.name = v["name"].GetString();
     entry.signature = v["signature"].GetString();
     entry.pattern = v["code-pattern"].GetString();

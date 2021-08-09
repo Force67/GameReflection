@@ -1,7 +1,10 @@
+// Copyright (C) Force67 2021.
+// For licensing information see LICENSE at the root of this distribution.
+// Purpose: JSON Exporter for Tweak-Database spec.
 #pragma once
-// tweaks db holds the implementation for all exported symbols
 
 #include <rapidjson/document.h>
+#include "tilted/tweak_database.h"
 
 namespace refl {
 
@@ -27,39 +30,22 @@ namespace refl {
     }]
 }*/
 
-struct FuncRecord {
-  // TODO: limit name length?
-  std::string name;
-  std::string signature;
-
-  // TODO: llvm small string?
-  std::string pattern = "";
-};
-
 // todo: refactor it into a true database x)
-class TweaksDatabase {
+class JsonTweakDatabase final : public TweakDatabase {
  public:
-  explicit TweaksDatabase(const std::string& file_path);
-  ~TweaksDatabase();
+  explicit JsonTweakDatabase(const std::string& file_path);
+  ~JsonTweakDatabase();
 
-  static std::unique_ptr<TweaksDatabase> 
+  static std::unique_ptr<JsonTweakDatabase> 
       LoadFromFile(const std::string& path);
   bool StoreToFile();
-
-  inline void AddAttribRecord(const std::string& name, const std::string &sig);
-  inline void AddFileExclusion(const std::string&);
-
  private:
   bool Parse(const char* data);
   std::unique_ptr<rapidjson::Document> Compose();
 
  private:
   std::string file_path_;
-  std::vector<FuncRecord> func_records_;
-  std::vector<std::string> file_exclusions_;
 };
-
-TweaksDatabase* get_persistant_state();
 }  // namespace refl
 
-#include "tweak/tweak_json_database.inl"
+#include "tilted/json_tweak_database.inl"

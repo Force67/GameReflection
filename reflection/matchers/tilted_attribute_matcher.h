@@ -11,6 +11,7 @@ class TiltedAttributeMatcher final : public MatcherBase {
   TiltedAttributeMatcher();
   ~TiltedAttributeMatcher();
 
+  // TODO: thread local storage parameter
   bool Match(const cppast::cpp_entity&, Phase) override;
 
  private:
