@@ -57,7 +57,7 @@ void InitOpts(int argc, char** argv, const char* const desc) {
         const size_t p2 = arg.find_first_of('=');
         if (p2 != StringRef::npos) {
           // is_found = true;
-          return ref.substr(0, pos).str() == arg.substr(0, p2);
+          return ref.substr(0, pos) == arg.substr(0, p2);
         }
       }
       return ref == arg;
