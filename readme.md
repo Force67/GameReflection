@@ -8,3 +8,14 @@ gamerefl needs to discover files in order to gather a deeper understanding of th
 - For XMake:<br/>
   Setup a flow to generate compile_commands by running ```xmake project -k compile_commands```. Then point gamerefl to compile commands by using: ```gamerefl <path_to_commands> -file-provider=CompileCommands```.
 
+## Options
+To get a list of all commandline parameters run ```gamerefl --help```.
+
+You are also able to supply non positional arguments (Arguments not not starting with ```"-"``` or ```"--"```) using a config file located at ```<YourExecuteableDir/gamrefl.cfg>``` that follows the following syntax:
+```
+@subconfig
+-option_3=abcd
+-option_4=\\\
+cdef
+```
+> :warning: Note that commandline options always take precedence over config args.
