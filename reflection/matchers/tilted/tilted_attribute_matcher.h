@@ -6,16 +6,14 @@
 
 namespace refl {
 
-class TiltedAttributeMatcher final : public MatcherBase {
+struct TiltedAttributeMatcher final : public MatcherBase {
  public:
   TiltedAttributeMatcher();
-  ~TiltedAttributeMatcher();
+  ~TiltedAttributeMatcher() = default;
 
-  // TODO: thread local storage parameter
-  bool Match(const cppast::cpp_entity&, Phase) override;
+  bool Run(LocalContext&, const cppast::cpp_entity&, Phase) override;
 
- private:
-  // this is so buggy with multithreading.. expect the worst
-  const cppast::cpp_entity* current_class_ = nullptr;
+  char* GetID() override { return &ID; }
+  static char ID;
 };
 }  // namespace refl

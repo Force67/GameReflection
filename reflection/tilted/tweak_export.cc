@@ -1,10 +1,20 @@
 // Copyright (C) Force67 2021.
 // For licensing information see LICENSE at the root of this distribution.
 
-#include "parser.h"
 #include "tilted/json_tweak_database.h"
 
+#include "matchers/match_registry.h"
+#include "matchers/tilted/tilted_attribute_matcher.h"
+
 namespace refl {
+
+void ExportTiltedV2(MatchRegistry& match) {
+  std::vector<const cppast::cpp_entity*> results;
+  // proposal to fetch objects without needing any sort of matcher instance
+  match.ResultsByID((uintptr_t)TiltedAttributeMatcher::ID, results);
+
+
+}
 
 namespace {
 // convert a member function to class::name
@@ -13,7 +23,7 @@ std::string PrettyFormatClassMember(const cppast::cpp_member_function& func) {
   auto& parent = static_cast<const cppast::cpp_class&>(func.parent().value());
   return parent.name() + "::" + func.name();
 }
-
+#if 0
 bool WriteTweaksCXXRegistry(const MatcherBase::entity_collection_t& findings, const std::string& file_path) {
   std::string tweaks_data =
       "//Copyright (C) Force67 2021.\n"
@@ -31,9 +41,11 @@ bool WriteTweaksCXXRegistry(const MatcherBase::entity_collection_t& findings, co
 
   return false;
 }
+#endif
 }  // namespace
 
 void ExportTiltedPhoquesTweaks(Parser& parser) {
+#if 0
   std::vector<MatcherBase*> matches;
   parser.FindAllMatchersOfDomain("TiltedPhoques", matches);
 
@@ -75,5 +87,6 @@ void ExportTiltedPhoquesTweaks(Parser& parser) {
 
     database->StoreToFile();
   }
+#endif
 }
 }  // namespace refl

@@ -2,7 +2,7 @@
 // For licensing information see LICENSE at the root of this distribution.
 
 #include "pch.h"
-#include "matchers/tilted_attribute_matcher.h"
+#include "tilted_attribute_matcher.h"
 
 namespace refl {
 
@@ -22,24 +22,23 @@ cl::opt<std::string> ExperimentalMarker("tilted-class-marker",
                                     cl::init("refl::override"));
 }  // namespace
 
+char TiltedAttributeMatcher::ID = 0;
+
 TiltedAttributeMatcher::TiltedAttributeMatcher()
     : MatcherBase("TiltedPhoques", "TiltedAttributeMatcher") {
 }
 
-TiltedAttributeMatcher::~TiltedAttributeMatcher() {
-}
-
-bool TiltedAttributeMatcher::Match(const cppast::cpp_entity& entity, Phase ignored_phase) {
+bool TiltedAttributeMatcher::Run(LocalContext& context, const cppast::cpp_entity& entity, Phase ignored_phase) {
   switch (entity.kind()) {
     case cppast::cpp_entity_kind::class_t: {
-      current_class_ = reinterpret_cast<const cppast::cpp_class*>(&entity);
+      context.selected = &entity;
       break;
     }
     case cppast::cpp_entity_kind::member_function_t: {
       auto& function = static_cast<const cppast::cpp_member_function&>(entity);
       // we are marked as a child by the parent.
       // watch this shit blow up.
-      if (&function.parent().value() == current_class_) {
+      if (&function.parent().value() == context.selected) {
         __debugbreak();
         return true;
       }

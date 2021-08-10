@@ -3,47 +3,38 @@
 #pragma once
 
 namespace refl {
-class MatcherBase {
-  friend class MatchRegistry;
- public:
-  explicit MatcherBase(const char* domain, const char *matcher_name);
+
+struct MatcherBase {
+  explicit MatcherBase(const char* group, const char* name)
+      : group_(group), name_(name) {}
   virtual ~MatcherBase() = default;
 
   // not every detail is caught during the first run
   // therefor some files may require a second pass
   enum class Phase {
-	  kFirstPass,
-	  kSecondPass,
+    kFirstPass,
+    kSecondPass,
   };
 
-  struct FileContext {
-    cppast::cpp_entity* selected;
+  struct LocalContext {
+    const cppast::cpp_entity* selected;
   };
 
-  virtual bool MatchRules(const cppast::cpp_entity&, Phase) = 0;
+  // This is called for every function
+  virtual bool Run(LocalContext& local_context, const cppast::cpp_entity&, Phase) = 0;
+  // Returns the bound id, which always shall be static char ID = 0;
+  // the value doesn't matter, we only use it to uniquely identify the pass
+  virtual char* GetID() = 0;
 
-  using entity_collection_t = std::vector<const cppast::cpp_entity*>;
-  const entity_collection_t& GetMatchedResults() const { return entity_refs_; }
-
-  llvm::StringRef GetDomainName() const { return domain_; }
-  llvm::StringRef GetMatcherName() const { return matcher_name_; }
- private:
-  // thread safe way of adding an entity to the queue of interest
-  void CollectEntity(const cppast::cpp_entity&);
-  // thread safe removal of entity of interest queue
-  void RemoveEntity(const cppast::cpp_entity&);
+  llvm::StringRef GetGroupName() const { return group_; }
+  llvm::StringRef GetMatcherName() const { return name_; }
 
  private:
-  // each matcher has to belong to a specific domain
+  // each matcher has to belong to a specific group
   // in order to be selected/deselected
-  const char* const domain_;
+  const char* const group_;
   // matcher name
   // this might require changing to some uuid format
-  const char* const matcher_name_;
-
-  // we must protect the collection with a lock since matchers may
-  // be invoked in parallel
-  std::mutex lock_;
-  entity_collection_t entity_refs_;
+  const char* const name_;
 };
 }  // namespace refl

@@ -23,18 +23,18 @@ void MatchRegistry::Add(std::unique_ptr<MatcherBase> match) {
   registry_.push_back(std::move(match));
 }
 
-void MatchRegistry::FindAllMatchersOfDomain(llvm::StringRef domain_name,
-                                            std::vector<MatcherBase*>& out) {
+void MatchRegistry::FindAllGroupCitizens(llvm::StringRef domain_name,
+                                         std::vector<MatcherBase*>& out) {
   for (auto i = registry_.begin(), toofar = registry_.end(); i != toofar; ++i)
-    if ((*i)->GetDomainName() == domain_name)
+    if ((*i)->GetGroupName() == domain_name)
       out.push_back(i->get());
 }
 
-void MatchRegistry::InvokeMatcher(MatcherBase& m, const cppast::cpp_entity& e) {
-  MatcherBase::FileContext local_context;
-  // TODO: invoke a match pass for the whole file.
-  if (m.MatchRules(e, MatcherBase::Phase::kFirstPass)) {
-    m.CollectEntity(e);
+void MatchRegistry::ResultsByID(uintptr_t id,
+                                std::vector<const cppast::cpp_entity*>& results) {
+  for (auto& it : analysis_results_) {
+    if (it.first == id)
+      results.push_back(it.second);
   }
 }
 
@@ -47,33 +47,37 @@ void MatchRegistry::DoMatchMT(Parser& parse_info) {
 
     // for each analyzed file, we query one job to the pool
     standardese_tool::add_job(pool, [&] {
+      // for thread safety we model our data model to store local data on a per thread basis.
+      MatcherBase::LocalContext thread_context{};
+      results_map_t local_map;
+
       cppast::visit(current_file, [&](const cppast::cpp_entity& entity, const cppast::visitor_info& info) {
         if (info.event == cppast::visitor_info::container_entity_exit)
-          // entity already handled
           return true;
         else if (!cppast::is_templated(entity) && !cppast::is_friended(entity)) {
           for (const auto& m : registry_) {
-            InvokeMatcher(*m, entity);
-
-            // TODO: allow thread local storage passed via param
-            if (m->Match(entity, MatcherBase::Phase::kFirstPass)) {
-              stats_.entity_match_count++;
-
-              m->CollectEntity(entity);
+            if (m->Run(thread_context, entity, MatcherBase::Phase::kFirstPass)) {
+              local_map.insert(std::make_pair((uintptr_t)m->GetID(), &entity));
             }
           }
         }
         return true;
       });
 
-      // TODO: this is rather tacky. refine this for an universal
-      // second process.
       auto comments = current_file.unmatched_comments();
       if (comments.size().get() > 0) {
         for (const auto& m : registry_) {
-          if (m->MatchRules(current_file, MatcherBase::Phase::kSecondPass)) {
-            m->CollectEntity(current_file);
+          if (m->Run(thread_context, current_file, MatcherBase::Phase::kSecondPass)) {
+            local_map.insert(std::make_pair((uintptr_t)m->GetID(), &current_file));
           }
+        }
+      }
+
+      // merge thread_locale with global map
+      {
+        std::lock_guard guard{merge_lock_};
+        for (auto& pair : local_map) {
+          analysis_results_.insert(std::move(pair));
         }
       }
     });

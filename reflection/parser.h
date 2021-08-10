@@ -12,11 +12,8 @@ class Parser {
  public:
   Parser();
 
-  bool TryParse(const std::vector<std::string>& file_list,
+  bool ParseWithCompilationDatabase(const std::vector<std::string>& file_list,
                 cppast::libclang_compilation_database*);
-
-  void TraverseFiles();
-  void DebugLogStats();
 
   using file_collection_t =
       std::vector<std::unique_ptr<cppast::cpp_file>>;
@@ -24,10 +21,6 @@ class Parser {
   const file_collection_t& file_collection() const {
     return parsed_files_;
   }
-
- private:
-  void InitializeConfig(cppast::libclang_compile_config&);
-  void DoTraverse(cppast::cpp_file&);
 
  private:
   file_collection_t parsed_files_;

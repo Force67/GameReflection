@@ -6,11 +6,13 @@
 
 namespace refl {
 
-class TiltedCommentMatcher final : public MatcherBase {
- public:
+struct TiltedCommentMatcher final : public MatcherBase {
   TiltedCommentMatcher();
   ~TiltedCommentMatcher() = default;
 
-  bool Match(const cppast::cpp_entity&, Phase) override;
+  bool Run(LocalContext &, const cppast::cpp_entity&, Phase) override;
+
+  char* GetID() override { return &ID; }
+  static char ID;
 };
 }  // namespace refl

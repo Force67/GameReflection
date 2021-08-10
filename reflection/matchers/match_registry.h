@@ -13,12 +13,18 @@ class MatchRegistry {
   void Add(std::unique_ptr<MatcherBase> match);
   void DoMatchMT(class Parser&);
 
-  void FindAllMatchersOfDomain(llvm::StringRef domain, 
+  void FindAllGroupCitizens(llvm::StringRef domain, 
 	  std::vector<MatcherBase*>& out);
- private:
-  void InvokeMatcher(MatcherBase& m, const cppast::cpp_entity&);
 
-private:
+  void ResultsByID(uintptr_t id, std::vector<const cppast::cpp_entity*> &results);
+
+ private:
   std::vector<std::unique_ptr<MatcherBase>> registry_;
+
+  // maps every pass to it's results:
+  using results_map_t = 
+	  std::map<uintptr_t, const cppast::cpp_entity*>;
+  results_map_t analysis_results_; 
+  std::mutex merge_lock_;
 };
 }  // namespace refl

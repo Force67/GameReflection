@@ -1,7 +1,7 @@
 // Copyright (C) Force67 2021.
 // For licensing information see LICENSE at the root of this distribution.
 
-#include "matchers/tilted_comment_matcher.h"
+#include "tilted_comment_matcher.h"
 
 namespace refl {
 
@@ -19,11 +19,13 @@ bool IsPrivateFile(const std::string& comment) {
 }
 }  // namespace
 
+char TiltedCommentMatcher::ID = 0;
+
 TiltedCommentMatcher::TiltedCommentMatcher()
     : MatcherBase("TiltedPhoques", "TiltedCommentMatcher") {
 }
 
-bool TiltedCommentMatcher::Match(const cppast::cpp_entity& entity, Phase phase) {
+bool TiltedCommentMatcher::Run(LocalContext& ctx, const cppast::cpp_entity& entity, Phase phase) {
   if (phase == Phase::kFirstPass) {
     // currently we don't handle comments which are attached to entities,
     // this may change though.
