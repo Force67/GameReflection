@@ -4,9 +4,6 @@
 #include "parser.h"
 #include "thread_pool.h"
 
-#include "matchers/tilted_comment_matcher.h"
-#include "matchers/tilted_attribute_matcher.h"
-
 namespace refl {
 
 namespace {
@@ -19,17 +16,15 @@ cl::opt<uint32_t> ParseThreadCount("parse-thread-count",
 Parser::Parser()
     : logger_{CreateLogger()} {
   InitializeConfig(clang_config_);
-
-  // TODO: group registry
-  matcher_registry_.emplace_back(std::make_unique<TiltedAttributeMatcher>());
-  matcher_registry_.emplace_back(std::make_unique<TiltedCommentMatcher>());
 }
 
 void Parser::DebugLogStats() {
+    #if 0
   auto str = fmt::format("Log stats:\nMatched Entities:{}\n==\n",
                          stats_.entity_match_count);
 
   logger_->log("[Refl::Parser]", cppast::diagnostic{str, {}, cppast::severity::info});
+  #endif
 }
 
 void Parser::InitializeConfig(cppast::libclang_compile_config& config) {
@@ -40,12 +35,6 @@ void Parser::InitializeConfig(cppast::libclang_compile_config& config) {
 #endif
   config.set_flags(cppast::cpp_standard::cpp_latest, flags);
   config.fast_preprocessing(true);
-}
-
-void Parser::FindAllMatchersOfDomain(llvm::StringRef domain_name, std::vector<MatcherBase*>& out) {
-  for (auto i = matcher_registry_.begin(), toofar = matcher_registry_.end(); i != toofar; ++i)
-    if ((*i)->GetDomainName() == domain_name)
-      out.push_back(i->get());
 }
 
 bool Parser::TryParse(const std::vector<std::string>& file_list, cppast::libclang_compilation_database* compile_database) {
@@ -88,33 +77,5 @@ void Parser::TraverseFiles() {
 }
 
 void Parser::DoTraverse(cppast::cpp_file& file) {
-  std::mutex mutex;
-  cppast::visit(file, [&](const cppast::cpp_entity& entity, const cppast::visitor_info& info) {
-    if (info.event == cppast::visitor_info::container_entity_exit)
-      // entity already handled
-      return true;
-    else if (!cppast::is_templated(entity) && !cppast::is_friended(entity)) {
-      for (const auto& m : matcher_registry_) {
-        // TODO: allow thread local storage passed via param
-        if (m->Match(entity, MatcherBase::Phase::kFirstPass)) {
-          stats_.entity_match_count++;
-
-          m->CollectEntity(entity);
-        }
-      }
-    }
-    return true;
-  });
-
-  // TODO: this is rather tacky. refine this for an universal
-  // second process.
-  auto comments = file.unmatched_comments();
-  if (comments.size().get() > 0) {
-    for (const auto& m : matcher_registry_) {
-      if (m->Match(file, MatcherBase::Phase::kSecondPass)) {
-        m->CollectEntity(file);
-      }
-    }
-  }
 }
 }  // namespace refl

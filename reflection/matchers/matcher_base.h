@@ -4,7 +4,7 @@
 
 namespace refl {
 class MatcherBase {
-  friend class Parser;
+  friend class MatchRegistry;
  public:
   explicit MatcherBase(const char* domain, const char *matcher_name);
   virtual ~MatcherBase() = default;
@@ -16,7 +16,11 @@ class MatcherBase {
 	  kSecondPass,
   };
 
-  virtual bool Match(const cppast::cpp_entity&, Phase) = 0;
+  struct FileContext {
+    cppast::cpp_entity* selected;
+  };
+
+  virtual bool MatchRules(const cppast::cpp_entity&, Phase) = 0;
 
   using entity_collection_t = std::vector<const cppast::cpp_entity*>;
   const entity_collection_t& GetMatchedResults() const { return entity_refs_; }

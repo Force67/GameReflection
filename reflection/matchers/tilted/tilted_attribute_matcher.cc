@@ -54,8 +54,8 @@ bool TiltedAttributeMatcher::Match(const cppast::cpp_entity& entity, Phase ignor
              !function.is_consteval() && !function.is_constexpr();
     }
     case cppast::cpp_entity_kind::variable_t: {
-      auto& var = static_cast<const cppast::cpp_variable&>(entity);
-      return cppast::has_attribute(var, VariableMarker) && !var.is_constexpr();
+      auto& variable = static_cast<const cppast::cpp_variable&>(entity);
+      return cppast::has_attribute(variable, VariableMarker) && !variable.is_constexpr();
     }
     default:
       return false;
