@@ -27,6 +27,7 @@
 #include <cppast/cpp_member_function.hpp>
 #include <cppast/cpp_class.hpp>
 #include <cppast/cpp_variable.hpp>
+#include "utils/cppast.h"
 
 #include <fmt/format.h>
 
@@ -34,3 +35,5 @@ using namespace clang::tooling;
 //using namespace clang::ast_matchers;
 using namespace clang;
 using namespace llvm;
+
+#define REFL_UNUSED(x) (void)x

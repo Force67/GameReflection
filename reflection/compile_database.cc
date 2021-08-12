@@ -11,7 +11,8 @@ ClangCompileDatabase::ClangCompileDatabase(const std::string& build_dir, const s
 
 void* ClangCompileDatabase::db_handle() {
   // this is a rather big hack but we don't want to break abi.
-  return &this[0];
+  // not a vtable so we can access it at null
+  return this;
 }
 
 void ClangCompileDatabase::CollectFiles(std::vector<std::string>& files) {

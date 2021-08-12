@@ -4,8 +4,9 @@
 #include "parser.h"
 #include "config.h"
 #include "compile_database.h"
+
 #include "tilted/tweak_export.h"
-#include "matchers/match_registry.h"
+#include "matchers/match_maker.h"
 
 #include <llvm/Support/StringSaver.h>
 
@@ -49,11 +50,12 @@ int main(int argc, char** argv) {
   Parser parser;
 
   std::vector<std::string> file_list;
-  if (auto commands = GetCompileCommands()) {
-    commands.value().CollectFiles(file_list);
+  if (auto ptr = GetCompileCommands()) {
+    auto& commands = ptr.value();
+    commands.CollectFiles(file_list);
 
     // ingest from clang compile commands db.
-    if (!parser.ParseWithCompilationDatabase(file_list, &commands.value())) {
+    if (!parser.ParseWithCompilationDatabase(file_list, &commands)) {
       fmt::print("Failed to ingest files from compilation database.\n"
           "Database location: {}\n", 
           InputPath);
@@ -66,10 +68,9 @@ int main(int argc, char** argv) {
     return -2;
   }
 
-  MatchRegistry match_manager;
-  match_manager.DoMatchMT(parser);
+  MatchMaker matcher;
+  matcher.DoMatchMT(parser);
 
-  // todo: domain switch check.
-  ExportTiltedPhoquesTweaks(parser);
+  ExportTiltedPhoquesTweaks(matcher);
   return 0;
 }

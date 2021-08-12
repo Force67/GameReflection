@@ -3,7 +3,7 @@
 #pragma once
 
 namespace refl {
-class MatchRegistry;
+class MatchMaker;
 
-void RegisterTPMatchers(MatchRegistry&);
+void RegisterTPMatchers(MatchMaker&);
 }  // namespace refl

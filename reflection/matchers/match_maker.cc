@@ -1,7 +1,7 @@
 // Copyright (C) Force67 2021.
 // For licensing information see LICENSE at the root of this distribution.
 
-#include "match_registry.h"
+#include "match_maker.h"
 #include "matcher_base.h"
 #include "parser.h"
 
@@ -15,22 +15,15 @@ static cl::opt<uint32_t> AnalysisTC("match-thread-count",
                                     cl::value_desc("thread-count"),
                                     cl::init(10u));
 
-MatchRegistry::MatchRegistry() {
+MatchMaker::MatchMaker() {
   RegisterTPMatchers(*this);
 }
 
-void MatchRegistry::Add(std::unique_ptr<MatcherBase> match) {
+void MatchMaker::Add(std::unique_ptr<MatcherBase> match) {
   registry_.push_back(std::move(match));
 }
 
-void MatchRegistry::FindAllGroupCitizens(llvm::StringRef domain_name,
-                                         std::vector<MatcherBase*>& out) {
-  for (auto i = registry_.begin(), toofar = registry_.end(); i != toofar; ++i)
-    if ((*i)->GetGroupName() == domain_name)
-      out.push_back(i->get());
-}
-
-void MatchRegistry::ResultsByID(uintptr_t id,
+void MatchMaker::ResultsByID(uintptr_t id,
                                 std::vector<const cppast::cpp_entity*>& results) {
   for (auto& it : analysis_results_) {
     if (it.first == id)
@@ -38,7 +31,7 @@ void MatchRegistry::ResultsByID(uintptr_t id,
   }
 }
 
-void MatchRegistry::DoMatchMT(Parser& parse_info) {
+void MatchMaker::DoMatchMT(Parser& parse_info) {
   // instantiate a new thread pool
   ThreadPool pool(AnalysisTC);
   for (const std::unique_ptr<cppast::cpp_file>& it :

@@ -3,18 +3,9 @@
 
 #include "tilted/json_tweak_database.h"
 
-#include "matchers/match_registry.h"
+#include "matchers/match_maker.h"
 #include "matchers/tilted/tilted_attribute_matcher.h"
-
-namespace refl {
-
-void ExportTiltedV2(MatchRegistry& match) {
-  std::vector<const cppast::cpp_entity*> results;
-  // proposal to fetch objects without needing any sort of matcher instance
-  match.ResultsByID((uintptr_t)TiltedAttributeMatcher::ID, results);
-
-
-}
+#include "matchers/tilted/tilted_comment_matcher.h"
 
 namespace {
 // convert a member function to class::name
@@ -23,39 +14,18 @@ std::string PrettyFormatClassMember(const cppast::cpp_member_function& func) {
   auto& parent = static_cast<const cppast::cpp_class&>(func.parent().value());
   return parent.name() + "::" + func.name();
 }
-#if 0
-bool WriteTweaksCXXRegistry(const MatcherBase::entity_collection_t& findings, const std::string& file_path) {
-  std::string tweaks_data =
-      "//Copyright (C) Force67 2021.\n"
-      "This file is auto generated. Do not edit.";
-
-  std::unique_ptr<WritableMemoryBuffer> buffer =
-      WritableMemoryBuffer::getNewMemBuffer(tweaks_data.size());
-
-  if (buffer) {
-    std::memcpy(buffer->getBufferStart(),
-                tweaks_data.data(), tweaks_data.size());
-
-    return true;
-  }
-
-  return false;
-}
-#endif
 }  // namespace
 
-void ExportTiltedPhoquesTweaks(Parser& parser) {
-#if 0
-  std::vector<MatcherBase*> matches;
-  parser.FindAllMatchersOfDomain("TiltedPhoques", matches);
+namespace refl {
 
-  // TODO: yeet hacky array bound access.
-  // view results of matchers.
-  auto& attribute_findings = matches[0]->GetMatchedResults();
-  auto& comment_findings = matches[1]->GetMatchedResults();
+void ExportTiltedPhoquesTweaks(MatchMaker& match_maker) {
+  std::vector<const cppast::cpp_entity*> attribute_results;
+  match_maker.GetResults<TiltedAttributeMatcher>(attribute_results);
 
-  WriteTweaksCXXRegistry(attribute_findings, "lol.cxx");
+  std::vector<const cppast::cpp_entity*> comment_results;
+  match_maker.GetResults<TiltedCommentMatcher>(comment_results);
 
+  #if 0
   if (std::unique_ptr<JsonTweakDatabase> database =
           JsonTweakDatabase::LoadFromFile("lol.json")) {
     for (const cppast::cpp_entity* e : comment_findings) {
@@ -87,6 +57,6 @@ void ExportTiltedPhoquesTweaks(Parser& parser) {
 
     database->StoreToFile();
   }
-#endif
+  #endif
 }
 }  // namespace refl

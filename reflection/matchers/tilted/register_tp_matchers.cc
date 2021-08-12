@@ -2,7 +2,7 @@
 // For licensing information see LICENSE at the root of this distribution.
 
 #include "register_tp_matchers.h"
-#include "matchers/match_registry.h"
+#include "matchers/match_maker.h"
 
 #include "tilted_attribute_matcher.h"
 #include "tilted_comment_matcher.h"
@@ -24,13 +24,13 @@ static cl::opt<bool> TPCommentMatcher(
     cl::init(true),
     cl::cat(TPCategory));
 
-void RegisterTPMatchers(MatchRegistry& reg) {
+void RegisterTPMatchers(MatchMaker& maker) {
   if (TPAttributeMatcher) {
-    reg.Add(std::make_unique<TiltedAttributeMatcher>());
+    maker.Add(std::make_unique<TiltedAttributeMatcher>());
   }
 
   if (TPCommentMatcher) {
-    reg.Add(std::make_unique<TiltedCommentMatcher>());
+    maker.Add(std::make_unique<TiltedCommentMatcher>());
   }
 }
 }  // namespace refl

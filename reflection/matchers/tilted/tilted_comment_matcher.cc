@@ -25,7 +25,10 @@ TiltedCommentMatcher::TiltedCommentMatcher()
     : MatcherBase("TiltedPhoques", "TiltedCommentMatcher") {
 }
 
-bool TiltedCommentMatcher::Run(LocalContext& ctx, const cppast::cpp_entity& entity, Phase phase) {
+bool TiltedCommentMatcher::Run(LocalContext& LC, const cppast::cpp_entity& entity, Phase phase) {
+  REFL_UNUSED(LC);
+  using namespace cppast;
+
   if (phase == Phase::kFirstPass) {
     // currently we don't handle comments which are attached to entities,
     // this may change though.
@@ -35,17 +38,17 @@ bool TiltedCommentMatcher::Run(LocalContext& ctx, const cppast::cpp_entity& enti
 
   // free comments are analyzed.
   if (phase == Phase::kSecondPass &&
-      entity.kind() == cppast::cpp_entity_kind::file_t) {
-    const auto& file = static_cast<const cppast::cpp_file&>(entity);
+      entity.kind() == cpp_entity_kind::file_t) {
+    const auto& file = asa<cpp_file>(entity);
 
     auto comments = file.unmatched_comments();
     assert(comments.size().get() > 0);
 
-    #if 0
+#if 0
     if (IsPrivateFile(comments.data()->content)) {
       return true;
     }
-    #endif
+#endif
   }
 
   return false;

@@ -3,7 +3,7 @@
 #pragma once
 
 namespace refl {
-class Parser;
+class MatchMaker;
 
-void ExportTiltedPhoquesTweaks(Parser&);
+void ExportTiltedPhoquesTweaks(MatchMaker&);
 }
