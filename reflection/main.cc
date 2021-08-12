@@ -35,7 +35,7 @@ static type_safe::optional<refl::ClangCompileDatabase> GetCompileCommands() {
 }
 
 static constexpr char kProgramDesc[] = 
-"GameRefl v0. (C) 2021 Force67.";
+"Refl.it v0. (C) 2021 Force67.";
 
 int main(int argc, char** argv) {
   using namespace refl;

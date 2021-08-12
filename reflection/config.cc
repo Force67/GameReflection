@@ -11,7 +11,7 @@ namespace refl {
 
 namespace {
 // file name of config on disk
-constexpr char kConfigFileName[] = "gamerefl.cfg";
+constexpr char kConfigFileName[] = "refl_config.cfg";
 // maximum amount of argument a command line is allowed to have
 constexpr uint32_t kMaxArgs = 32u;
 // mirrored as per llvm source in lib/Support/CommandLine.cpp

@@ -3,7 +3,7 @@
 
 project("reflection")
     kind("ConsoleApp")
-    targetname("gamerefl")
+    targetname("reflit")
     staticruntime("On")
     includedirs({
         ".",
